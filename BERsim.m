@@ -68,7 +68,7 @@ for i = 1:numIter
         
         % Compute and store the BER for this iteration
         
-        [zzz berVec(i,j)] = biterr(msg, rxMSG);  % We're interested in the BER, which is the 2nd output of BITERR
+        [~, berVec(i,j)] = biterr(msg, rxMSG);  % We're interested in the BER, which is the 2nd output of BITERR
         
     end  % End SNR iteration
 end      % End numIter iteration

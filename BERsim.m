@@ -5,17 +5,18 @@ clc;
 % For the final version of this project, you must use these 3
 % parameter. You will likely want to set numIter to 1 while you debug your
 % link, and then increase it to get an average BER.
-numIter = 10;  % The number of iterations of the simulation
-nSym = 10000;    % The number of symbols per packet
+numIter = 1;  % The number of iterations of the simulation
+nSym = 1000;    % The number of symbols per packet
 SNR_Vec = 0:2:16;
 lenSNR = length(SNR_Vec);
+symbolTrain = 200;
 
 M = 16;        % The M-ary number, 2 corresponds to binary modulation
 k = log2(M);
 %SNR_Vec = SNR_Vec + 10*log10(k);
 
 chan = 1;          % No channel
-%chan = [1 .2 .4]; % Somewhat invertible channel impulse response, Moderate ISI
+% chan = [1 .2 .4]; % Somewhat invertible channel impulse response, Moderate ISI
 %chan = [0.227 0.460 0.688 0.460 0.227]';   % Not so invertible, severe ISI
 
 
@@ -43,7 +44,8 @@ for i = 1:numIter
     % convert the bits to integers. See the BIN2DE function
     % For binary, our MSG signal is simply the bits
     msg = bi2de(reshape(bits, [nSym k]));
-    
+    %msg(1:50) = mod(1:50, 16);
+
     for j = 1:lenSNR % one iteration of the simulation at each SNR Value
                 
         tx = qammod(msg,M);  % BPSK modulate the signal
@@ -60,17 +62,24 @@ for i = 1:numIter
         % Convert from EbNo to SNR.
         % Note: Because No = 2*noiseVariance^2, we must add ~3 dB
         % to get SNR (because 10*log10(2) ~= 3).
-        txNoisy = awgn(txChan,3+SNR_Vec(j),'measured'); % Add AWGN
+        txNoisy = awgn(txChan,10*log10(k)+SNR_Vec(j),'measured'); % Add AWGN
+  
+        eq1 = lineareq(2, rls(1));
+        eq1.SigConst = qammod((0:M-1)',M)';
+        [symbolest, yd] = equalize(eq1, txNoisy, tx(1:symbolTrain));
+        eql.ResetBeforeFiltering = 0;
         
-        rx = qamdemod(txNoisy,M); % Demodulate
+        rx = qamdemod(yd,M); % Demodulate
+        rx = de2bi(rx); 
+        rxMSG = reshape(rx, [nSym*k, 1]);
         
         % Again, if M was a larger number, I'd need to convert my symbols
         % back to bits here.
-        rxMSG = rx;
+        % rxMSG = rx;
         
         % Compute and store the BER for this iteration
         
-        [~, berVec(i,j)] = biterr(msg, rxMSG);  % We're interested in the BER, which is the 2nd output of BITERR
+        [~, berVec(i,j)] = biterr(bits(symbolTrain+1:end), rxMSG(symbolTrain+1:end));  % We're interested in the BER, which is the 2nd output of BITERR
         
     end  % End SNR iteration
 end      % End numIter iteration

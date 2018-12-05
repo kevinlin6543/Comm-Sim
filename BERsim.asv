@@ -54,8 +54,8 @@ for i = 1:numIter
     for j = 1:lenSNR % one iteration of the simulation at each SNR Value
                
         tx = qammod(msg,M);  % BPSK modulate the signal
-        tx4 = qammod(msg4, 4);
-        tx16 = qammod(msg16, 16);
+        tx4 = qammod(msg4, 4)
+        tx16 = qammod(msg16, 16)
        
         if isequal(chan,1)
             txChan = tx;
@@ -74,20 +74,16 @@ for i = 1:numIter
         else 
             txNoisy = awgn(txChan,10*log10(k)+SNR_Vec(j),'measured'); % Add AWGN
         end
-        
-        txNoisy4 = awgn(tx4, 10*log10(log2(4))+SNR_Vec(j),'measured'); % Add AWGN
-        txNoisy16 = awgn(tx16, 10*log10(log2(16))+SNR_Vec(j),'measured'); % Add AWGN
-        
+        txNoisy4 = awgn(txChan,10*log10(log2(4))+SNR_Vec(j),'measured'); % Add AWGN
+        txNoisy16 = awgn(txChan,10*log10(log2(16))+SNR_Vec(j),'measured'); % Add AWGN
         rx4 = qamdemod(txNoisy4, 4);
         rx4 = de2bi(rx4);
         rxMSG4 = reshape(rx4, [nSym*2, 1]);
         [~, berVecQAM(i,j,1)] = biterr(bits4, rxMSG4);
-        
         rx16 = qamdemod(txNoisy16, 16);
         rx16 = de2bi(rx16);
         rxMSG16 = reshape(rx16, [nSym*4, 1]);
         [~, berVecQAM(i,j,2)] = biterr(bits16, rxMSG16);
-        
         berQAM(:,1) = mean(berVecQAM(:,:,1));
         berQAM(:,2) = mean(berVecQAM(:,:,2));
         
@@ -209,21 +205,10 @@ ylabel('BER');
 legend('BER LMS step size = 0.01', 'BER LMS step size = 0.05', 'BER RSL forgetting factor = 1','BER RSL forgetting factor = 0.7','Theoretical BER')
 
 figure;
-semilogy(SNR_Vec, berQAM(:,1));
-berTheory4QAM = berawgn(SNR_Vec,'qam',4);
+semilogy(SNR_Vec, berQAM);
 hold on
-semilogy(SNR_Vec,berTheory4QAM,'r')
-title('BER 4 QAM');
+semilogy(SNR_Vec,berTheory,'r')
+title('BER 4 QAM and 16 QAM');
 xlabel('SNR');
 ylabel('BER');
-legend('4 QAM','Theoretical BER')
-
-figure;
-semilogy(SNR_Vec, berQAM(:,2));
-berTheory4QAM = berawgn(SNR_Vec,'qam',16);
-hold on
-semilogy(SNR_Vec,berTheory4QAM,'r')
-title('BER 16 QAM');
-xlabel('SNR');
-ylabel('BER');
-legend('16 QAM','Theoretical BER')
+legend('4 QAM', '16 QAM','Theoretical BER')

@@ -6,12 +6,12 @@ clc;
 % Determines the number of iterations, number of symbols, the SNR range,
 % what modulation is used and the amount of training symbols. The setup
 % variables are declared here
-numIter = 10;  % The number of iterations of the simulation
+numIter = 1000;  % The number of iterations of the simulation
 nSym = 1000;    % The number of symbols per packet
 SNR_Vec = 0:2:16;
 lenSNR = length(SNR_Vec);
 
-traceBack = 60;
+traceBack = 32;
 trellis = poly2trellis(7,[171 133]);
 rate = 1/2;
 

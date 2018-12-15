@@ -9,10 +9,10 @@ SNR_Vec = 0:2:16;
 lenSNR = length(SNR_Vec);
 
 % M = 4;        % The M-ary number, 2 corresponds to binary modulation
-N = 63;  % Codeword length
-K = 51;  % Message length
-S = 39;  % Shortened message length
-M = 64;
+N = 15;  % Codeword length
+K = 13;  % Message length
+S = 10;  % Shortened message length
+M = 4;  % Modulation order
 k = log2(M);
 
 %chan = 1;          % No channel
@@ -29,8 +29,8 @@ chan = [1 .2 .4]; % Somewhat invertible channel impulse response, Moderate ISI
 % chan.StoreHistory = 1; % Uncomment if you want to be able to do plot(chan)
 %
 gp = rsgenpoly(N,K,[],0);
-rsEncoder = comm.RSEncoder(N,K,gp,S,'BitInput',true);
-rsDecoder = comm.RSDecoder(N,K,gp,S,'BitInput',true);
+rsEncoder = comm.RSEncoder(N,K,gp,'BitInput',true);
+rsDecoder = comm.RSDecoder(N,K,gp,'BitInput',true);
 rate = S/(N-(K-S));
 % Create a vector to store the BER computed during each iteration
 berVec = zeros(numIter, lenSNR);
@@ -39,7 +39,7 @@ berVec = zeros(numIter, lenSNR);
 for i = 1:numIter
     
     %  bits = randint(1, nSym*M, [0 1]);     % Generate random bits
-    bits = randi(2,[S*k*nSym, 1])-1;
+    bits = randi(2,[K*nSym*k, 1])-1;
     % New bits must be generated at every
     % iteration
     

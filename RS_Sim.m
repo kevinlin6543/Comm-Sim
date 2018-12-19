@@ -22,6 +22,7 @@ K = 5;  % Message length 5
 %chan = 1;          % No channel
 chan = [1 .2 .4]; % Somewhat invertible channel impulse response, Moderate ISI
 %chan = [0.227 0.460 0.688 0.460 0.227]';   % Not so invertible, severe ISI
+
  
 % Time-varying Rayleigh multipath channel, try it if you dare. Or take
 % wireless comms.

@@ -7,6 +7,7 @@ clc;
 numIter = 10;  % The number of iterations of the simulation    % The number of symbols per packet
 SNR_Vec = 0:2:16;
 lenSNR = length(SNR_Vec);
+symbolTrain = 100;
 
 traceBack = 32;
 trellis(1) = poly2trellis(7, [171 133]);
@@ -26,7 +27,7 @@ chan = [1 .2 .4];
 berVec = zeros(numIter, lenSNR);
 berVecQAM = zeros(numIter, lenSNR);
  
-%% Simulation
+% Simulation
 % Generates random bits, reshapes the bits for modulation and then add
 % noise and channel. The receiver has an equalizer. Different equalizers
 % were shown and the BER was simulated
@@ -34,19 +35,19 @@ for i = 1:numIter
    
     bits = randi(2,[nSym*k, 1])-1; 
    
-    msg(:,1) = convenc(bits,trellis(1));
-    msg(:,2) = convenc(bits,trellis(2));
+    msg = convenc(bits,trellis(1));
+    msg2(:,1) = convenc(bits,trellis(1));
+    msg2(:,2) = convenc(bits,trellis(2));
     for j = 1:lenSNR 
         tx = qammod(msg,M, 'InputType', 'bit','UnitAveragePower',true); 
-        
+        tx2 = qammod(msg2,M, 'InputType', 'bit','UnitAveragePower',true); 
         % Chooses which channel is used
         if isequal(chan,1)
             txChan = tx;
-        elseif isa(chan,'channel.rayleigh')
-            reset(chan) % Draw a different channel each iteration
-            txChan = filter(chan,tx);
+            txChan2 = tx2;
         else
             txChan = filter(chan,1,tx);  % Apply the channel.
+            txChan2 = filter(chan,1, tx2);
         end
        
         % Scale the noise to match for each symbol
@@ -54,34 +55,45 @@ for i = 1:numIter
             txNoisy = awgn(txChan,3+SNR_Vec(j),'measured'); % Add AWGN
         else 
             txNoisy = awgn(txChan,10*log10(k)+SNR_Vec(j),'measured'); 
+            txNoisy2 = awgn(txChan2,10*log10(k)+SNR_Vec(j),'measured'); 
         end
         
-        rx = qamdemod(txNoisy,M,'OutputType','bit','UnitAveragePower',true);
+        eq = dfe(5, 3, lms(0.01));
+        eq.SigConst = qammod((0:M-1)',M)';
+        eq.ResetBeforeFiltering = 1;
+        [symbolest1, y] = equalize(eq, txNoisy, tx(1:symbolTrain,1));
         
-        dataRx(:,1) = vitdec(rx(:,1),trellis(1),traceBack,'cont','hard');
-        dataRx(:,2) = vitdec(rx(:,2),trellis(2),traceBack,'cont','hard');
-    
+        rx = qamdemod(y,M,'OutputType','bit','UnitAveragePower',true);
+        rx2 = qamdemod(txNoisy2,M,'OutputType','bit','UnitAveragePower',true);
+        
+        dataRx(:,1) = vitdec(rx,trellis(1),traceBack,'cont','hard');
+        dataRx(:,2) = vitdec(rx2(:,1),trellis(1),traceBack,'cont','hard');
+        dataRx(:,3) = vitdec(rx2(:,2),trellis(2),traceBack,'cont','hard');
+        
         rxMSG = dataRx;
-        [~, berVec(i,j,1)] = biterr(bits(1:end-traceBack), rxMSG(traceBack+1:end,1));
+        [~, berVec(i,j,1)] = biterr(bits(symbolTrain+1:end-traceBack), rxMSG(traceBack+symbolTrain+1:end,1));
         ber(:,1) = mean(berVec(:,:,1));
         [~, berVec(i,j,2)] = biterr(bits(1:end-traceBack), rxMSG(traceBack+1:end,2));
         ber(:,2) = mean(berVec(:,:,2));
+        [~, berVec(i,j,3)] = biterr(bits(1:end-traceBack), rxMSG(traceBack+1:end,3));
+        ber(:,3) = mean(berVec(:,:,3));
         
     end  % End SNR iteration
 end      % End numIter iteration
  
-%% Plot for BERs
+% Plot for BERs
 % Takes the mean BER from the demod and constructs graph comparing
 % different equalizer and symbol training
 berTheory = berawgn(SNR_Vec,'qam',M);
 figure();
-semilogy(SNR_Vec, ber(:,1:2));
+semilogy(SNR_Vec, ber(:,1:3));
 hold on
 semilogy(SNR_Vec,berTheory,'r');
-title('Viterbi algorithm used on a 16 QAM signal');
+title('Viterbi algorithm used on a 4 QAM signal');
 xlabel('SNR','fontsize',18);
 ylabel('BER','fontsize',18);
-legend({'Theoretical 4-QAM', 'Trellis code: 171 133', 'Trellis code: 101 123'});
+legend({'Trellis code: 171 133 with equalizer', 'Trellis code: 171 133',...
+        'Trellis code: 101 123', 'Theoretical 4-QAM'});
 hold off;
 
 %% Transmission with RS Encoding and 8PSK

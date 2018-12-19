@@ -44,7 +44,7 @@ for i = 1:numIter
         % Chooses which channel is used
         if isequal(chan,1)
             txChan = tx;
-            txChan2 = tx2;
+            txChan2 = filter(chan,1, tx2);
         else
             txChan = filter(chan,1,tx);  % Apply the channel.
             txChan2 = filter(chan,1, tx2);
@@ -93,7 +93,7 @@ title('Viterbi algorithm used on a 4 QAM signal');
 xlabel('SNR','fontsize',18);
 ylabel('BER','fontsize',18);
 legend({'Trellis code: 171 133 with equalizer', 'Trellis code: 171 133',...
-        'Trellis code: 101 123', 'Theoretical 4-QAM'});
+        'Trellis code: 101 123', 'Theoretical 4-QAM'}, 'location', 'southeast');
 hold off;
 
 %% Transmission with RS Encoding and 8PSK

@@ -23,7 +23,6 @@ K = 5;  % Message length 5
 chan = [1 .2 .4]; % Somewhat invertible channel impulse response, Moderate ISI
 %chan = [0.227 0.460 0.688 0.460 0.227]';   % Not so invertible, severe ISI
  
- 
 % Time-varying Rayleigh multipath channel, try it if you dare. Or take
 % wireless comms.
 % ts = 1/1000;
@@ -35,10 +34,6 @@ chan = [1 .2 .4]; % Somewhat invertible channel impulse response, Moderate ISI
  
 % Create a vector to store the BER computed during each iteration
 berVec = zeros(numIter, lenSNR);
-
-% Create PSK Modulator
-pskModulator = comm.PSKModulator('ModulationOrder',M,'BitInput',true);
-pskDemodulator = comm.PSKDemodulator('ModulationOrder',M,'BitOutput',true);
 
 % Create Reed-Solomon Encoder/Decoder
 rsEncoder = comm.RSEncoder('BitInput',true,'CodewordLength',N,'MessageLength',K);
@@ -58,10 +53,8 @@ for i = 1:numIter
     msg = bi2de(reshape(encData, [length(encData)/bps bps]));
     
     for j = 1:lenSNR % one iteration of the simulation at each SNR Value
-               
-        %tx = qammod(msg,M);  % BPSK modulate the signal
-        %tx4 = qammod(msg4, 4);
-        tx = pskmod(msg,M);
+        
+        tx = pskmod(msg,M);     % 8-PSK modulate the signal
         
         if isequal(chan,1)
             txChan = tx;
